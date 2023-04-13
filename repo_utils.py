@@ -7,6 +7,8 @@ load_dotenv()
 gh_username = os.environ.get('gh_username', "<your-username>")
 gh_access_token = os.environ.get('gh_access_token', None)
 
+CACHE_DIR = ".cache/repo/"
+
 def https_to_ssh(https_url: str) -> str:
     parts = https_url.split('/')
     repo_owner = parts[-2]
@@ -56,13 +58,12 @@ def fork_and_clone_repo(repo_url):
 
 
 def clone_repo(repo_url):
-  cache_dir = ".cache/repo/"
   try:
-    if not os.path.exists(cache_dir):
-      os.makedirs(cache_dir)
+    if not os.path.exists(CACHE_DIR):
+      os.makedirs(CACHE_DIR)
 
     repo_name = repo_url.split("/")[-1].replace(".git", "")
-    repo_path = os.path.join(cache_dir, repo_name)
+    repo_path = os.path.join(CACHE_DIR, repo_name)
 
     if not os.path.exists(repo_path):
       git.Repo.clone_from(repo_url, repo_path)
@@ -80,8 +81,7 @@ def commit_and_push_pr(repo_url, repo_name, commit_message, pr_title, pr_descrip
       not pr_description):
     raise ("You need to include all: commit_message, pr_title, pr_description")
 
-  cache_dir = ".cache/repo/"
-  repo_path = f"{cache_dir}{repo_name}"
+  repo_path = f"{CACHE_DIR}{repo_name}"
   repo = git.Repo(repo_path)
 
   # Set the Git username and email
@@ -111,8 +111,7 @@ def commit_and_push_pr(repo_url, repo_name, commit_message, pr_title, pr_descrip
 
 
 def clear_repo_changes(repo_name):
-  cache_dir = ".cache/repo/"
-  repo_path = f"{cache_dir}{repo_name}"
+  repo_path = f"{CACHE_DIR}{repo_name}"
   repo = git.Repo(repo_path)
 
   # Clear all staged changes
