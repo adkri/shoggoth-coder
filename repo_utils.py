@@ -1,6 +1,8 @@
 import os
 import git
 from github import Github
+from dotenv import load_dotenv
+load_dotenv()
 
 gh_username = os.environ.get('gh_username', "<your-username>")
 gh_access_token = os.environ.get('gh_access_token', None)
@@ -22,38 +24,35 @@ def repo_name_from_url(repo_url):
 
 def fork_and_clone_repo(repo_url):
   cache_dir = ".cache/repo/"
-  try:
-    if not os.path.exists(cache_dir):
-      os.makedirs(cache_dir)
+  if not os.path.exists(cache_dir):
+    os.makedirs(cache_dir)
 
-    repo_name = repo_url.split("/")[-1].replace(".git", "")
-    repo_path = os.path.join(cache_dir, repo_name)
+  repo_name = repo_url.split("/")[-1].replace(".git", "")
+  repo_path = os.path.join(cache_dir, repo_name)
 
-    original_owner = repo_url.split("/")[-2]
+  original_owner = repo_url.split("/")[-2]
 
-    if original_owner != gh_username:
-      g = Github(gh_access_token)
-      original_repo = g.get_user(original_owner).get_repo(repo_name)
-      # need to fork and clone
-      forked_repo = g.get_user().create_fork(original_repo)
-      if not os.path.exists(repo_path):
-        git.Repo.clone_from(forked_repo.ssh_url, repo_path)
-      else:
-        repo = git.Repo(repo_path)
-        origin = repo.remotes.origin
-        origin.pull()
+  if original_owner != gh_username:
+    g = Github(gh_access_token)
+    original_repo = g.get_user(original_owner).get_repo(repo_name)
+    # need to fork and clone
+    forked_repo = g.get_user().create_fork(original_repo)
+    if not os.path.exists(repo_path):
+      git.Repo.clone_from(forked_repo.ssh_url, repo_path)
     else:
-      # can just clone for personal repo
-      if not os.path.exists(repo_path):
-        ssh_url = https_to_ssh(repo_url)
-        git.Repo.clone_from(ssh_url, repo_path)
-      else:
-        repo = git.Repo(repo_path)
-        origin = repo.remotes.origin
-        origin.pull()
-    return True
-  except:
-    raise ("Failed to load repo")
+      repo = git.Repo(repo_path)
+      origin = repo.remotes.origin
+      origin.pull()
+  else:
+    # can just clone for personal repo
+    if not os.path.exists(repo_path):
+      ssh_url = https_to_ssh(repo_url)
+      git.Repo.clone_from(ssh_url, repo_path)
+    else:
+      repo = git.Repo(repo_path)
+      origin = repo.remotes.origin
+      origin.pull()
+  return True
 
 
 def clone_repo(repo_url):

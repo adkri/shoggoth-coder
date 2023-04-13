@@ -17,6 +17,7 @@ Press the Run button
 * OPENAI_API_KEY - OpenAI api key (https://platform.openai.com/account/api-keys)
 * gh_username - Github username
 * gh_access_token - Classic access token (https://github.com/settings/tokens, make sure to enable Repo scope)
+* GIT_SSH_COMMAND='ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no'
 
 Place in .env
 
