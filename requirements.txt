@@ -1,0 +1,13 @@
+uvicorn
+numpy 
+Flask 
+urllib3 
+Flask-Cors 
+PyYAML 
+fastapi
+GitPython 
+PyGithub
+chromadb
+openai
+tiktoken
+tenacity
