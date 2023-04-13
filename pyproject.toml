@@ -1,8 +1,0 @@
-uvicorn
-numpy 
-Flask 
-urllib3 
-Flask-Cors 
-PyYAML 
-fastapi
-GitPython 
