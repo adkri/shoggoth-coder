@@ -25,12 +25,11 @@ def repo_name_from_url(repo_url):
 
 
 def fork_and_clone_repo(repo_url):
-  cache_dir = ".cache/repo/"
-  if not os.path.exists(cache_dir):
-    os.makedirs(cache_dir)
+  if not os.path.exists(CACHE_DIR):
+    os.makedirs(CACHE_DIR)
 
   repo_name = repo_url.split("/")[-1].replace(".git", "")
-  repo_path = os.path.join(cache_dir, repo_name)
+  repo_path = os.path.join(CACHE_DIR, repo_name)
 
   original_owner = repo_url.split("/")[-2]
 
