@@ -1,13 +1,12 @@
 import chromadb
-from chromadb.config import Settings
-from ast_extractor import extract_metadata
-
 import openai
 import os
-from pathlib import Path
 import tiktoken
-from tenacity import retry, wait_random_exponential, stop_after_attempt, retry_if_not_exception_type
 
+from chromadb.config import Settings
+from pathlib import Path
+from tenacity import retry, wait_random_exponential, stop_after_attempt, retry_if_not_exception_type
+from shoggoth_coder.repo_embedder.metadata_extractors.extractor import get_metadata_extractor, metadata_to_amalgamation
 
 OPENAI_KEY = os.environ.get('OPENAI_API_KEY')
 
@@ -18,6 +17,8 @@ EMBEDDING_MODEL = 'text-embedding-ada-002'
 EMBEDDING_CTX_LENGTH = 8191
 EMBEDDING_ENCODING = 'cl100k_base'
 
+SUPPORTED_LANGUAGES = ['py', 'js']
+
 def truncate_text_tokens(text, encoding_name=EMBEDDING_ENCODING, max_tokens=EMBEDDING_CTX_LENGTH):
     """Truncate a string to have `max_tokens` according to the given encoding."""
     encoding = tiktoken.get_encoding(encoding_name)
@@ -26,23 +27,7 @@ def truncate_text_tokens(text, encoding_name=EMBEDDING_ENCODING, max_tokens=EMBE
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6), retry=retry_if_not_exception_type(openai.InvalidRequestError))
 def generate_embeddings(text_or_tokens, model=EMBEDDING_MODEL):
     return openai.Embedding.create(input=text_or_tokens, model=model)["data"][0]["embedding"]
-    # return get_embedding(code, engine='text-embedding-ada-002')
 
-def get_metadata_amalgamation(file_name, file_path_key, ast_metadata):
-    func_sigs = '\n'.join([f'{func}{params}' for func, params in  ast_metadata['function_signatures'].items()])
-    constants = '\n'.join([f'{name}{val}' for name, val in  ast_metadata['constants'].items()])
-    if constants.strip() == "":
-        constants = "<empty>"
-    class_str = []
-    for class_name, class_metadata in ast_metadata['classes'].items():
-        class_str.append(f"class {class_name}:")
-        class_str.append(f"    {','.join(class_metadata['methods'])}")
-        class_str.append(f"    {','.join(class_metadata['fields'])}")
-
-    classes = '\n'.join(class_str)
-    if classes.strip() == "":
-        classes = "<empty>"
-    return f"##{file_name}({file_path_key})\n### Function signatures:\n {func_sigs}\n### Constants:\n{constants}\n###Classes:\n{classes}"
 
 def create_repo_embedding(repo_name, repo_path):
     # setup chroma dir
@@ -55,13 +40,17 @@ def create_repo_embedding(repo_name, repo_path):
 
     indexed_data = []
 
-    all_files = Path(repo_path).rglob("*.py")
+    all_files = Path(repo_path).rglob("*")
     for file in all_files:
         file_path = str(file)
-        ast_metadata = extract_metadata(file_path)
-
+        file_ext = os.path.splitext(file_path)[1][1:]
         file_name = file_path.split(os.sep)[-1]
         file_path_key = os.sep.join(file_path.split(os.sep)[2:])
+
+        try:
+            metadata_extractor = get_metadata_extractor(file_ext)
+        except ValueError:
+            continue # skip unsupported files
 
         # Read the code from the file
         with open(file_path, "r", encoding="utf-8") as source:
@@ -70,7 +59,8 @@ def create_repo_embedding(repo_name, repo_path):
             print(f"Skipping {file_name} as it is empty")
             continue
 
-        metadata_str = get_metadata_amalgamation(file_name, file_path_key, ast_metadata)
+        metadata = metadata_extractor.extract_metadata(file_path)
+        metadata_str = f"##{file_name}({file_path_key})\n{metadata_to_amalgamation(metadata)}"
 
         indexed_data.append((None, code, file_name, metadata_str, file_path_key))
 
@@ -94,7 +84,7 @@ def create_repo_embedding(repo_name, repo_path):
         truncated_code = truncate_text_tokens(combined_code)
         embeddings = generate_embeddings(truncated_code)
         # print(embeddings)
-        print(f"The combined metadata is {combined_metadata_amal}")
+        # print(f"The combined metadata is {combined_metadata_amal}")
 
         collection.add(
             embeddings=[embeddings],
@@ -114,7 +104,9 @@ def search_repo_embeddings(query, repo_name):
 
     # Generate embeddings for the code
     embeddings = generate_embeddings(query)
-    result = collection.query(query_embeddings=[embeddings], n_results=2)
+    cnt = collection.count()
+    n_results = min(cnt, 3)
+    result = collection.query(query_embeddings=[embeddings], n_results=n_results)
     res_metadatas = result["metadatas"] [0]
     metadata_amal = [item["metadata_amal"] for item in res_metadatas]
     return "\n".join(metadata_amal)
@@ -132,14 +124,13 @@ def debug_create_repo_embedding(repo_name):
     create_repo_embedding(repo_name, f".cache/repo/{repo_name}")
 
     # repo_embedding_cache_dir = f"./.cache/chroma-embeddings-{repo_name}" 
-    # # Set up ChromaDB client and collection
+    # Set up ChromaDB client and collection
     # chroma_client = chromadb.Client(Settings(chroma_db_impl="duckdb+parquet",
     # persist_directory=repo_embedding_cache_dir))
     # # collection = chroma_client.get_or_create_collection(name=repo_name)
 
 if __name__ == "__main__":
     ## debugging code
-    repo_name = "my_repo"
+    repo_name = "repo-name"
     debug_search(repo_name)
    
-

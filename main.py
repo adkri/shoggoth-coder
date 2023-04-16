@@ -7,8 +7,8 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 
-from repo_utils import repo_name_from_url, commit_and_push_pr, clear_repo_changes, fork_and_clone_repo
-from repo_embedder import create_repo_embedding, search_repo_embeddings
+from shoggoth_coder.repo_utils import repo_name_from_url, commit_and_push_pr, clear_repo_changes, fork_and_clone_repo
+from shoggoth_coder.repo_embedder.embedder import create_repo_embedding, search_repo_embeddings
 
 from dotenv import load_dotenv
 load_dotenv()

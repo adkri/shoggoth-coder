@@ -12,3 +12,4 @@ openai
 tiktoken
 tenacity
 python-dotenv
+esprima

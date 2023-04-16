@@ -3,7 +3,7 @@
   "name_for_human": "Shoggoth Coder v2",
   "name_for_model": "coder",
   "description_for_human": "Plugin for making code changes to a git repo.",
-  "description_for_model": "Plugin for making code changes to git repository. First, let user search for repo and display the resulting links in markdown. Always ask for explicit confirmation from the user before updating code in the repo.",
+  "description_for_model": "Plugin for making code changes to git repository. First, let user search for repo and display the resulting links in markdown. Always ask for explicit Y/N confirmation from the user before doing any mutation in the repo. Be short and concise when explaining the code.",
   "auth": {
     "type": "none"
   },
