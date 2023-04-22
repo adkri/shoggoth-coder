@@ -40,3 +40,14 @@ $ python3 main.py
 Currently only supports Python and has limited support for javascript. 
 Also, due to the limited context window, it struggles with long files.
 
+
+## TODO
+- Use regex matching on js files to find functions, classes, etc
+  - same for other languages
+- Better explanation of code
+  - kick off background process to summarize repo at file level, module level, etc
+- Editing large files
+  - maintain active buffer of current file
+  - add an "/edit-line" api for chatGPT
+    - interface is edit(file, line, text, num_lines, type=insert|replace)
+  - peek file to see if it's too large, and if so, ask GPT to edit only sections with "/edit-line"
